@@ -1,15 +1,11 @@
 const { NodeSSH } = require('node-ssh');
+const { sshConfig, requireEnv, setEnvLine } = require('./lib/env');
 const ssh = new NodeSSH();
 
 async function main() {
     console.log("Connexion au serveur...");
     try {
-        await ssh.connect({
-            host: '102.208.105.133',
-            username: 'root',
-            password: '%@R@4QS&Y9B%',
-            readyTimeout: 60000
-        });
+        await ssh.connect(sshConfig('ROOT', { readyTimeout: 60000 }));
         console.log("Connecté avec succès !");
 
         async function exec(command) {
@@ -66,14 +62,16 @@ async function main() {
         console.log("\n=== Configuration du .env ===");
         await exec('cd /root/supabase/docker && cp .env.example .env');
         
-        // Set secure passwords
-        await exec(`cd /root/supabase/docker && sed -i 's/POSTGRES_PASSWORD=your-super-secret-and-long-postgres-password/POSTGRES_PASSWORD=StockAlertDBPass2026!/g' .env`);
-        await exec(`cd /root/supabase/docker && sed -i 's/JWT_SECRET=your-super-secret-jwt-token-with-at-least-32-characters-long/JWT_SECRET=StockAlertJWTSecret2026SuperSecureKey99/g' .env`);
-        await exec(`cd /root/supabase/docker && sed -i 's/DASHBOARD_PASSWORD=this_password_is_insecure_and_should_be_updated/DASHBOARD_PASSWORD=StockAlertDash2026!/g' .env`);
-        
-        // Set the public URL to the server IP
-        await exec(`cd /root/supabase/docker && sed -i 's|SUPABASE_PUBLIC_URL=http://localhost:8000|SUPABASE_PUBLIC_URL=http://102.208.105.133:8000|g' .env`);
-        await exec(`cd /root/supabase/docker && sed -i 's|API_EXTERNAL_URL=http://localhost:8000/auth/v1|API_EXTERNAL_URL=http://102.208.105.133:8000/auth/v1|g' .env`);
+        // Secrets lus depuis .env (jamais en dur)
+        const envDir = 'cd /root/supabase/docker';
+        await exec(`${envDir} && ${setEnvLine('POSTGRES_PASSWORD', requireEnv('SUPABASE_POSTGRES_PASSWORD'))}`);
+        await exec(`${envDir} && ${setEnvLine('JWT_SECRET', requireEnv('SUPABASE_JWT_SECRET'))}`);
+        await exec(`${envDir} && ${setEnvLine('DASHBOARD_PASSWORD', requireEnv('SUPABASE_DASHBOARD_PASSWORD'))}`);
+
+        // URL publique = IP du serveur
+        const publicUrl = `http://${requireEnv('ROOT_SSH_HOST')}:8000`;
+        await exec(`${envDir} && ${setEnvLine('SUPABASE_PUBLIC_URL', publicUrl)}`);
+        await exec(`${envDir} && ${setEnvLine('API_EXTERNAL_URL', `${publicUrl}/auth/v1`)}`);
 
         // Step 5: Pull & Start Supabase
         console.log("\n=== Pull des images Docker Supabase ===");

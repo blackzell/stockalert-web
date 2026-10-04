@@ -1,8 +1,9 @@
 const { NodeSSH } = require('node-ssh');
+const { sshConfig } = require('./lib/env');
 const ssh = new NodeSSH();
 
 async function main() {
-    await ssh.connect({ host: '102.208.105.133', username: 'root', password: '%@R@4QS&Y9B%' });
+    await ssh.connect(sshConfig('ROOT'));
     console.log("Ping github...");
     const res = await ssh.execCommand('ping -c 3 github.com');
     console.log(res.stdout);

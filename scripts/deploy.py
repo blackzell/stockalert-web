@@ -1,6 +1,26 @@
-import paramiko
-import time
+import os
 import sys
+from pathlib import Path
+
+import paramiko
+
+
+def load_env():
+    # Charge le .env à la racine du projet (ignoré par git, voir .env.example)
+    env_file = Path(__file__).resolve().parent.parent / '.env'
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                key, value = line.split('=', 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+def require_env(name):
+    value = os.environ.get(name)
+    if not value:
+        sys.exit(f"Variable manquante : {name}. Renseigne-la dans .env (voir .env.example).")
+    return value
 
 def run_command(ssh, command):
     print(f"Exécution: {command}", flush=True)
@@ -15,9 +35,10 @@ def run_command(ssh, command):
     return exit_status
 
 def main():
-    host = '102.220.17.198'
-    username = 'ubuntu'
-    password = '5eb62Keby9'
+    load_env()
+    host = require_env('UBUNTU_SSH_HOST')
+    username = require_env('UBUNTU_SSH_USER')
+    password = require_env('UBUNTU_SSH_PASSWORD')
     
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

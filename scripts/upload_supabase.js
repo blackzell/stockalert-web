@@ -1,14 +1,10 @@
 const { NodeSSH } = require('node-ssh');
+const { sshConfig, requireEnv, setEnvLine } = require('./lib/env');
 const ssh = new NodeSSH();
 
 async function main() {
     console.log("Connexion au serveur...");
-    await ssh.connect({
-        host: '102.220.17.198',
-        username: 'ubuntu',
-        password: '5eb62Keby9',
-        readyTimeout: 60000
-    });
+    await ssh.connect(sshConfig('UBUNTU', { readyTimeout: 60000 }));
     console.log("Connecté avec succès !");
 
     async function execCommand(command) {
@@ -32,8 +28,7 @@ async function main() {
         
         await execCommand('cd supabase/docker && cp .env.example .env');
 
-        const pgPass = "StockAlertDBPass2026";
-        await execCommand(`cd supabase/docker && sed -i 's/POSTGRES_PASSWORD=your-super-secret-and-long-postgres-password/POSTGRES_PASSWORD=${pgPass}/g' .env`);
+        await execCommand(`cd supabase/docker && ${setEnvLine('POSTGRES_PASSWORD', requireEnv('SUPABASE_POSTGRES_PASSWORD'))}`);
         
         console.log("Pulling des images Docker...");
         await execCommand('cd supabase/docker && docker compose pull');

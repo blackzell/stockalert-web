@@ -1,15 +1,11 @@
 const { NodeSSH } = require('node-ssh');
+const { sshConfig } = require('./lib/env');
 const ssh = new NodeSSH();
 
 async function main() {
     console.log("Connexion au serveur...");
     try {
-        await ssh.connect({
-            host: '102.208.105.133',
-            username: 'root',
-            password: '%@R@4QS&Y9B%',
-            readyTimeout: 60000
-        });
+        await ssh.connect(sshConfig('ROOT', { readyTimeout: 60000 }));
         console.log("Connecté avec succès !");
 
         async function execCommand(command) {

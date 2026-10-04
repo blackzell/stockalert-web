@@ -1,13 +1,10 @@
 const { NodeSSH } = require('node-ssh');
+const { sshConfig } = require('./lib/env');
 const ssh = new NodeSSH();
 
 async function main() {
     console.log("Connexion au serveur...");
-    await ssh.connect({
-        host: '102.220.17.198',
-        username: 'ubuntu',
-        password: '5eb62Keby9'
-    });
+    await ssh.connect(sshConfig('UBUNTU'));
     console.log("Connecté avec succès !");
 
     // Helper pour exécuter une commande
